@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'drf_yasg',
-    'takerpicture'
+    'user',
 ]
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -53,6 +53,18 @@ TEMPLATES = [
         },
     },
 ]
+
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'Token': {
+            'type': 'apiKey',
+            'name': 'bootcamp',
+            'in': 'header'
+        }
+    },
+}
+
 WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # <https://docs.djangoproject.com/en/4.2/ref/settings/#databases>
