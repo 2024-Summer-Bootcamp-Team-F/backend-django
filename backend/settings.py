@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'user',
+    'storages',
+    'image',
 ]
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -107,3 +109,13 @@ STATIC_URL = 'static/'
 # <https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field>
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ORIGIN_ALLOW_ALL = True
+
+# AWS S3 연결
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME')
+AWS_QUERYSTRING_AUTH = False
+
+# 파일 저장 시 S3 를 디폴드 값으로 설정
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'

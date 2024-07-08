@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-
+#users 에서 쓸 앤드포인트가 들어가
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -26,6 +26,7 @@ urlpatterns = [
 
     # Add more URL patterns here as needed
     path('api/v1/nicknames/', include('user.urls')),
+    path('api/v1/', include('image.urls')),
 ]
 
 urlpatterns += [
@@ -41,5 +42,3 @@ urlpatterns += [
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
-
