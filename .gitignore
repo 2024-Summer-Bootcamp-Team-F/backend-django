@@ -18,3 +18,4 @@ django_backend/.env
 db/.env
 
 venvs
+.venv

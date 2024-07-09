@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import environ
 import pymysql
+import boto3
 
 pymysql.install_as_MySQLdb()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -28,6 +29,8 @@ INSTALLED_APPS = [
     'user',
     'storages',
     'image',
+    'background',
+    'django_celery_results',
 ]
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -119,3 +122,26 @@ AWS_QUERYSTRING_AUTH = False
 
 # 파일 저장 시 S3 를 디폴드 값으로 설정
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+
+# DRF 설정
+REST_FRAMEWORK = {
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.FormParser',
+    ),
+}
+
+# 외부 API 설정
+DRAPHART_API_KEY = env('DRAPHART_API_KEY')
+
+
+# Celery 설정 추가
+CELERY_BROKER_URL = 'amqp://localhost'  # RabbitMQ 브로커 URL
+CELERY_RESULT_BACKEND = 'django-db'     # 결과를 저장할 백엔드
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Seoul'
+
