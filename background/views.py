@@ -139,7 +139,7 @@ def generate_background(request):
         return Response({"error": f"S3 업로드 실패: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # 데이터베이스에 배경 이미지 저장
-    background_image = BackgroundImage.objects.create(
+    background_image = BackgroundImage.otbjecs.create(
         user=user,
         image=image,
         gen_type=gen_type,

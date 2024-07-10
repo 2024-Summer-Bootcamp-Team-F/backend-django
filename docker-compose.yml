@@ -6,12 +6,10 @@ services:
     container_name: mysqldb
     env_file:
       - "./db/.env"
-    #mysql 환경 변수와 관련된 file은 현재 위치/db 하위에 .env파일로 따로 둠 #
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql  # MySQL 데이터를 지속적으로 유지하기 위한 볼륨 설정
-
+      - mysql_data:/var/lib/mysql
 
   backend:
     build:
@@ -25,10 +23,36 @@ services:
     restart: always
     depends_on:
       - mysqldb
-    command:
+      - rabbitmq
+    command: >
       bash -c "python wait_mysql.py &&
       python manage.py makemigrations &&
       python manage.py migrate &&
       python manage.py runserver 0.0.0.0:8000"
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: celery
+    volumes:
+      - ./:/app
+    depends_on:
+      - backend
+      - rabbitmq
+    command: celery -A backend worker --loglevel=info --uid=nobody
+
+
+
 volumes:
   mysql_data:
+  rabbitmq_data:

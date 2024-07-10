@@ -30,7 +30,9 @@ INSTALLED_APPS = [
     'storages',
     'image',
     'background',
-    'django_celery_results',
+    #Celery 추가
+    'django_celery_results',  # Celery 결과 백엔드 추가
+    #여기까지
 ]
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -137,11 +139,20 @@ REST_FRAMEWORK = {
 DRAPHART_API_KEY = env('DRAPHART_API_KEY')
 
 
-# Celery 설정 추가
-CELERY_BROKER_URL = 'amqp://localhost'  # RabbitMQ 브로커 URL
-CELERY_RESULT_BACKEND = 'django-db'     # 결과를 저장할 백엔드
+# Celery settings
+CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672'
+CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Seoul'
+
+
+
+
+
+
+
+
+
 
