@@ -68,87 +68,87 @@ services:
       - redis
     command: celery -A backend worker --loglevel=info --uid=nobody
     
-  prometheus:
-     image: prom/prometheus:latest
-     container_name: prometheus
-     volumes:
-       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-     ports:
-       - "9090:9090"
-     depends_on:
-       - backend
-
-  grafana:
-     image: grafana/grafana:latest
-     container_name: grafana
-     ports:
-       - "3000:3000"
-     volumes:
-        - grafana_data:/var/lib/grafana
-     depends_on:
-         - prometheus
-
-  node-exporter:
-     image: prom/node-exporter:latest
-     container_name: node-exporter
-     ports:
-       - "9100:9100"
-     restart: unless-stopped
-     volumes:
-       - /proc:/host/proc:ro
-       - /sys:/host/sys:ro
-       - /:/rootfs:ro
-     command:
-       - '--path.procfs=/host/proc'
-       - '--path.sysfs=/host/sys'
-       - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
-
-  cadvisor:
-     image: google/cadvisor:latest
-     container_name: cadvisor
-     ports:
-       - "8080:8080"
-     volumes:
-       - /:/rootfs:ro
-       - /var/run:/var/run:rw
-       - /sys:/sys:ro
-       - /var/lib/docker/:/var/lib/docker:ro
-     restart: unless-stopped
-
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ports:
-      - "9200:9200"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-
-  logstash:
-    image: docker.elastic.co/logstash/logstash:7.17.9
-    container_name: logstash
-    volumes:
-      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-      - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
-      - ./logs:/usr/share/logstash/logs
-    ports:
-      - "5044:5044"
-      - "9600:9600"  # Logstash API 포트 추가
-    depends_on:
-      - elasticsearch
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.9
-    container_name: kibana
-    ports:
-      - "5601:5601"
-    depends_on:
-      - elasticsearch
+#  prometheus:
+#     image: prom/prometheus:latest
+#     container_name: prometheus
+#     volumes:
+#       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+#     ports:
+#       - "9090:9090"
+#     depends_on:
+#       - backend
+#
+#  grafana:
+#     image: grafana/grafana:latest
+#     container_name: grafana
+#     ports:
+#       - "3000:3000"
+#     volumes:
+#        - grafana_data:/var/lib/grafana
+#     depends_on:
+#         - prometheus
+#
+#  node-exporter:
+#     image: prom/node-exporter:latest
+#     container_name: node-exporter
+#     ports:
+#       - "9100:9100"
+#     restart: unless-stopped
+#     volumes:
+#       - /proc:/host/proc:ro
+#       - /sys:/host/sys:ro
+#       - /:/rootfs:ro
+#     command:
+#       - '--path.procfs=/host/proc'
+#       - '--path.sysfs=/host/sys'
+#       - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
+#
+#  cadvisor:
+#     image: google/cadvisor:latest
+#     container_name: cadvisor
+#     ports:
+#       - "8080:8080"
+#     volumes:
+#       - /:/rootfs:ro
+#       - /var/run:/var/run:rw
+#       - /sys:/sys:ro
+#       - /var/lib/docker/:/var/lib/docker:ro
+#     restart: unless-stopped
+#
+#  elasticsearch:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+#    container_name: elasticsearch
+#    environment:
+#      - discovery.type=single-node
+#      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+#    ports:
+#      - "9200:9200"
+#    volumes:
+#      - elasticsearch_data:/usr/share/elasticsearch/data
+#
+#  logstash:
+#    image: docker.elastic.co/logstash/logstash:7.17.9
+#    container_name: logstash
+#    volumes:
+#      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+#      - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+#      - ./logs:/usr/share/logstash/logs
+#    ports:
+#      - "5044:5044"
+#      - "9600:9600"  # Logstash API 포트 추가
+#    depends_on:
+#      - elasticsearch
+#
+#  kibana:
+#    image: docker.elastic.co/kibana/kibana:7.17.9
+#    container_name: kibana
+#    ports:
+#      - "5601:5601"
+#    depends_on:
+#      - elasticsearch
 
 volumes:
   mysql_data:
   rabbitmq_data:
-  grafana_data:
-  elasticsearch_data:
+#  grafana_data:
+#  elasticsearch_data:
