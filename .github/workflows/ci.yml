@@ -50,7 +50,7 @@ jobs:
       # MySQL 서비스 대기 및 상태 확인
       - name: Wait for MySQL to be ready
         run: |
-          python backend/wait_mysql.py
+          python wait_mysql.py
 
       # 데이터베이스 마이그레이션 및 테스트 실행
       - name: Run Migrations
