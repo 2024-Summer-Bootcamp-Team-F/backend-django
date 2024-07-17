@@ -1,0 +1,117 @@
+name: Django CI
+
+on:
+  push:
+    branches:
+      - test
+  pull_request:
+    branches:
+      - test
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Python 설정
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      # 의존성 설치
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Docker Compose 설정
+      - name: Set up Docker Compose
+        run: |
+          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" > .env
+          echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" >> .env
+          echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> .env
+          echo "DATABASE_PASS=${{ secrets.DATABASE_PASS }}" >> .env
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "AWS_S3_REGION_NAME=${{ secrets.AWS_S3_REGION_NAME }}" >> .env
+          echo "AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }}" >> .env
+
+      # Docker Compose 빌드 및 실행
+      - name: Build and Run with Docker Compose
+        run: docker-compose up --build -d
+
+      # 데이터베이스 마이그레이션 및 테스트 실행
+      - name: Run Tests
+        run: |
+          docker-compose exec web python manage.py migrate
+          docker-compose exec web pytest --ds=backend_django.settings
+
+      # 코드 커버리지 실행
+      - name: Run Coverage
+        run: |
+          docker-compose exec web pip install coverage
+          docker-compose exec web coverage run -m pytest
+          docker-compose exec web coverage report
+          docker-compose exec web coverage xml
+
+      # 코드 커버리지 업로드
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          files: coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+      # Docker Compose 종료
+      - name: Shutdown Docker Compose
+        run: docker-compose down
+
+  # 통합 테스트 실행
+  integration-tests:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Python 설정
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      # 의존성 설치
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Set up Docker Compose
+        run: |
+          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" > .env
+          echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" >> .env
+          echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> .env
+          echo "DATABASE_PASS=${{ secrets.DATABASE_PASS }}" >> .env
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "AWS_S3_REGION_NAME=${{ secrets.AWS_S3_REGION_NAME }}" >> .env
+          echo "AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }}" >> .env
+
+      - name: Build and Run with Docker Compose
+        run: docker-compose up --build -d
+
+      - name: Run Integration Tests
+        run: |
+          docker-compose exec web python manage.py migrate
+          docker-compose exec web pytest -m integration
+
+      - name: Shutdown Docker Compose
+        run: docker-compose down
