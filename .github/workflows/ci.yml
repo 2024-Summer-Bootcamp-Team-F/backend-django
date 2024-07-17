@@ -129,6 +129,6 @@ jobs:
           docker-compose exec web python manage.py migrate
           docker-compose exec web pytest -m integration
 
-      - name: Shutdown Docker Compose
+
       - name: Shutdown Docker Compose
         run: docker-compose down
