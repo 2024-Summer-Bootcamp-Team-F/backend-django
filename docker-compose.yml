@@ -26,6 +26,8 @@ services:
       - mysqldb
       - rabbitmq
       - redis
+    env_file:
+      - "./db/.env"
     command: >
       bash -c "python wait_mysql.py &&
       python manage.py makemigrations &&
@@ -73,8 +75,6 @@ services:
       python manage.py makemigrations &&
       python manage.py migrate &&
       gunicorn -w 4 -b 0.0.0.0:8000 --timeout 300 backend.wsgi:application"
-    
-
 
 volumes:
   mysql_data:

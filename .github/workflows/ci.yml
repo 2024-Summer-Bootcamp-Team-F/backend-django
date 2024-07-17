@@ -54,23 +54,23 @@ jobs:
 
       # 데이터베이스 마이그레이션 및 테스트 실행
       - name: Run Migrations
-        run: docker-compose run backend python manage.py migrate --verbosity 3
+        run: docker-compose run --env-file db/.env backend python manage.py migrate --verbosity 3
 
       # 마이그레이션 후 상태 확인
       - name: Check Migration Status
-        run: docker-compose run backend python manage.py showmigrations
+        run: docker-compose run --env-file db/.env backend python manage.py showmigrations
 
       # 테스트 실행
       - name: Run Tests
-        run: docker-compose run backend pytest --ds=backend_django.settings
+        run: docker-compose run --env-file db/.env backend pytest --ds=backend_django.settings
 
       # 코드 커버리지 실행
       - name: Run Coverage
         run: |
-          docker-compose run backend pip install coverage
-          docker-compose run backend coverage run -m pytest
-          docker-compose run backend coverage report
-          docker-compose run backend coverage xml
+          docker-compose run --env-file db/.env backend pip install coverage
+          docker-compose run --env-file db/.env backend coverage run -m pytest
+          docker-compose run --env-file db/.env backend coverage report
+          docker-compose run --env-file db/.env backend coverage xml
 
       # 코드 커버리지 업로드
       - name: Upload Coverage to Codecov
@@ -123,8 +123,8 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          docker-compose run backend python manage.py migrate
-          docker-compose run backend pytest -m integration
+          docker-compose run --env-file db/.env backend python manage.py migrate
+          docker-compose run --env-file db/.env backend pytest -m integration
 
       - name: Shutdown Docker Compose
         run: docker-compose down
