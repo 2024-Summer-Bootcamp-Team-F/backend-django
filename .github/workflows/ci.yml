@@ -47,9 +47,13 @@ jobs:
       - name: Build and Run with Docker Compose
         run: docker-compose up --build -d
 
-      # 데이터베이스 상태 확인
-      - name: Check Database Status
-        run: docker-compose exec db mysqladmin ping -h localhost -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }}
+      # MySQL 서비스 대기
+      - name: Wait for MySQL to be ready
+        run: |
+          until docker-compose exec db mysqladmin ping -h localhost -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }} --silent; do
+            echo 'waiting for mysql...'
+            sleep 5
+          done
 
       # 데이터베이스 마이그레이션 및 테스트 실행
       - name: Run Migrations
@@ -125,5 +129,6 @@ jobs:
           docker-compose exec web python manage.py migrate
           docker-compose exec web pytest -m integration
 
+      - name: Shutdown Docker Compose
       - name: Shutdown Docker Compose
         run: docker-compose down
