@@ -51,30 +51,30 @@ jobs:
       - name: Wait for MySQL to be ready
         run: |
           docker-compose logs mysqldb
-          until docker-compose exec mysqldb mysqladmin ping -h localhost -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }} --silent; do
+          until docker-compose run mysqldb mysqladmin ping -h localhost -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }} --silent; do
             echo 'waiting for mysql...'
             sleep 5
           done
 
       # 데이터베이스 마이그레이션 및 테스트 실행
       - name: Run Migrations
-        run: docker-compose exec backend python manage.py migrate --verbosity 3
+        run: docker-compose run backend python manage.py migrate --verbosity 3
 
       # 마이그레이션 후 상태 확인
       - name: Check Migration Status
-        run: docker-compose exec backend python manage.py showmigrations
+        run: docker-compose run backend python manage.py showmigrations
 
       # 테스트 실행
       - name: Run Tests
-        run: docker-compose exec backend pytest --ds=backend_django.settings
+        run: docker-compose run backend pytest --ds=backend_django.settings
 
       # 코드 커버리지 실행
       - name: Run Coverage
         run: |
-          docker-compose exec backend pip install coverage
-          docker-compose exec backend coverage run -m pytest
-          docker-compose exec backend coverage report
-          docker-compose exec backend coverage xml
+          docker-compose run backend pip install coverage
+          docker-compose run backend coverage run -m pytest
+          docker-compose run backend coverage report
+          docker-compose run backend coverage xml
 
       # 코드 커버리지 업로드
       - name: Upload Coverage to Codecov
@@ -127,8 +127,8 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          docker-compose exec backend python manage.py migrate
-          docker-compose exec backend pytest -m integration
+          docker-compose run backend python manage.py migrate
+          docker-compose run backend pytest -m integration
 
       - name: Shutdown Docker Compose
         run: docker-compose down
