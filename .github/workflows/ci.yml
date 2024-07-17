@@ -47,11 +47,21 @@ jobs:
       - name: Build and Run with Docker Compose
         run: docker-compose up --build -d
 
+      # 데이터베이스 상태 확인
+      - name: Check Database Status
+        run: docker-compose exec db mysqladmin ping -h localhost -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }}
+
       # 데이터베이스 마이그레이션 및 테스트 실행
+      - name: Run Migrations
+        run: docker-compose exec web python manage.py migrate --verbosity 3
+
+      # 마이그레이션 후 상태 확인
+      - name: Check Migration Status
+        run: docker-compose exec web python manage.py showmigrations
+
+      # 테스트 실행
       - name: Run Tests
-        run: |
-          docker-compose exec web python manage.py migrate
-          docker-compose exec web pytest --ds=backend_django.settings
+        run: docker-compose exec web pytest --ds=backend_django.settings
 
       # 코드 커버리지 실행
       - name: Run Coverage
