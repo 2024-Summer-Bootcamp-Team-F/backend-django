@@ -84,7 +84,7 @@ jobs:
       - name: Shutdown Docker Compose
         run: docker-compose down
 
-  # 통합 테스트 실행
+    # 통합 테스트 실행
   integration-tests:
     needs: build
     runs-on: ubuntu-latest
@@ -103,7 +103,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r backend/requirements.txt
 
       - name: Set up Docker Compose
         run: |
