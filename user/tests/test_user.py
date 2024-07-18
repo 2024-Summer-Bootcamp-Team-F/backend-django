@@ -17,18 +17,18 @@ class TestUserAPI:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data['data']['nickname'] == 'testuser'
 
-    def test_create_nickname_duplicate(self):
+    def test_create_nickname_duplicate(self): #닉네임 중복 검사
         self.client.post(self.create_nickname_url, {'nickname': 'testuser'})
         response = self.client.post(self.create_nickname_url, {'nickname': 'testuser'})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert 'error' in response.data
 
-    def test_create_nickname_blank(self):
+    def test_create_nickname_blank(self): #닉네임 공백 검사
         response = self.client.post(self.create_nickname_url, {'nickname': ''})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert 'error' in response.data
 
-    def test_get_nickname(self):
+    def test_get_nickname(self): #닉네임 조회 테스트
         create_response = self.client.post(self.create_nickname_url, {'nickname': 'testuser'})
         user_id = create_response.data['data']['id']
         get_nickname_url = reverse('user:get-nickname', kwargs={'user_id': user_id})
@@ -36,12 +36,12 @@ class TestUserAPI:
         assert get_response.status_code == status.HTTP_200_OK
         assert get_response.data['data']['nickname'] == 'testuser'
 
-    def test_get_nonexistent_nickname(self):
+    def test_get_nonexistent_nickname(self): #존재하지 않는 유저 닉네임 조회
         get_nickname_url = reverse('user:get-nickname', kwargs={'user_id': 999})
         response = self.client.get(get_nickname_url)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_get_nickname_deleted_user(self):
+    def test_get_nickname_deleted_user(self): #삭제된 유저 닉네임 조회
         create_response = self.client.post(self.create_nickname_url, {'nickname': 'testuser'})
         user_id = create_response.data['data']['id']
         User.objects.filter(id=user_id).update(is_deleted=True)
