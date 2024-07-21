@@ -1,4 +1,4 @@
-name: Django CI
+name: Django CI/CD
 
 on:
   push:
@@ -84,7 +84,6 @@ jobs:
       - name: Shutdown Docker Compose
         run: docker-compose down
 
-    # 통합 테스트 실행
   integration-tests:
     needs: build
     runs-on: ubuntu-latest
@@ -128,3 +127,32 @@ jobs:
 
       - name: Shutdown Docker Compose
         run: docker-compose down
+
+  deploy:
+    needs: [build, integration-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # SSH 설정 단계
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}  # GitHub Secrets에 저장된 SSH 키 사용
+
+      # 파일을 EC2 인스턴스로 복사
+      - name: Copy Files to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no -r * ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/backend-django
+
+      # SSH를 통해 EC2 인스턴스에 접속하여 배포 작업 실행
+      - name: SSH and Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          cd /home/ubuntu/backend-django
+          docker-compose down
+          git pull origin develop
+          docker-compose up --build -d
+          EOF
