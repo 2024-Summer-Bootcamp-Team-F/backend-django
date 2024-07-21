@@ -15,7 +15,7 @@ schema_view = get_schema_view(
     ),
     public=True,                                # API 스키마가 공개되도록 설정
     permission_classes=[permissions.AllowAny],  # 누구나 API 스키마를 조회할 수 있도록 허용
-    url='https://techeerpicture.store/api/v1'
+    #url='https://techeerpicture.store/api/v1'
 )
 
 # URL 패턴 목록
