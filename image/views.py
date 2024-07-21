@@ -1,4 +1,3 @@
-# views.py
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, serializers
 from rest_framework.decorators import api_view, parser_classes
@@ -62,7 +61,7 @@ def upload_image(request, *args, **kwargs):
 
     return Response({
         "success": "이미지가 업로드 중입니다. 업로드가 완료되면 URL이 업데이트됩니다.",
-        "image_id": image_instance.id
+        "image_id": image_instance.id  # image_id 반환
     }, status=status.HTTP_202_ACCEPTED)
 
 # Swagger를 사용하여 이미지 조회 및 삭제 API 문서화
