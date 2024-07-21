@@ -54,15 +54,10 @@ def generate_background_task(user_id, image_id, gen_type, output_w, output_h, co
                           ExtraArgs={'ContentType': 'image/png'})
         s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
 
-        background_image = Background.objects.create(
-            user=user,
-            image=image,
-            gen_type=gen_type,
-            concept_option=json.dumps(concept_option),
-            output_w=output_w,
-            output_h=output_h,
-            image_url=s3_url
-        )
+        # Background 인스턴스 업데이트
+        background_image = Background.objects.get(image=image, gen_type=gen_type, concept_option=json.dumps(concept_option), output_w=output_w, output_h=output_h)
+        background_image.image_url = s3_url
+        background_image.save()
 
         redis_client.delete(f'background_image_url_{image_id}')
 

@@ -89,10 +89,25 @@ def backgrounds_view(request):
     # 로그 추가
     logger.info(f"Temporary S3 URL for image_id {image_id}: {s3_url}")
 
+    # Background 인스턴스 생성
+    background_instance = Background.objects.create(
+        user=user,
+        image=image,
+        gen_type=gen_type,
+        concept_option=json.dumps(concept_option),
+        output_w=output_w,
+        output_h=output_h,
+        image_url=s3_url
+    )
+
     # 비동기 작업으로 배경 이미지 생성
     task = generate_background_task.delay(user_id, image_id, gen_type, output_w, output_h, concept_option, unique_filename)
 
-    return Response({"task_id": task.id, "s3_url": s3_url}, status=status.HTTP_202_ACCEPTED)
+    return Response({
+        "task_id": task.id,
+        "s3_url": s3_url,
+        "background_id": background_instance.id  # background_id 반환
+    }, status=status.HTTP_202_ACCEPTED)
 
 # Swagger를 사용하여 생성된 이미지 조회, 수정, 삭제 API 문서화
 @swagger_auto_schema(
