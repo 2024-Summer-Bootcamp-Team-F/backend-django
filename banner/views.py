@@ -28,7 +28,7 @@ async def generate_ad_text(item_name, item_concept, item_category, add_informati
         'Content-Type': 'application/json'
     }
     data = {
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-4",
         "messages": [
             {"role": "system",
              "content": "당신은 창의적인 카피라이터입니다. 각 요청에 대해 일관된 광고 문구를 한 문장으로 생성하세요. 광고 문구는 최대 20자 이내의 완전한 문장으로 작성하세요. 글자 수 제한에 따라 완전한 문장이 되지 않는다면 다시 생성해주세요."},
@@ -44,23 +44,22 @@ async def generate_ad_text(item_name, item_concept, item_category, add_informati
             response = await client.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
             response.raise_for_status()
             response_json = response.json()
-            maintext = response_json['choices'][0]['message']['content'].strip()
+            maintext = response_json['choices'][0]['message']['content'].strip().strip('\"')
             return maintext[:20]  # 광고 문구를 최대 20자 이내로 제한
         except httpx.HTTPStatusError as exc:
             logger.error(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
             raise
 
-# 서브 광고 문구 생성을 위한 비동기 함수
 async def generate_serve_text(maintext, item_concept, item_category, add_information, interaction_data):
     headers = {
         'Authorization': f'Bearer {openai_api_key}',  # OpenAI API 키를 헤더에 포함
         'Content-Type': 'application/json'
     }
     data = {
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-4",
         "messages": [
             {"role": "system",
-             "content": "당신은 창의적인 카피라이터입니다. 각 요청에 대해 일관된 광고 문구를 생성하세요. 광고 문구는 최대 30자 이내의 완전한 문장으로 작성하세요. 글자 수 제한에 따라 완전한 문장이 되지 않는다면, 다시 생성해주세요."},
+             "content": "당신은 창의적인 카피라이터입니다. 각 요청에 대해 일관된 광고 문구를 생성하세요. 광고 문구는 최대 20자 이내의 완전한 문장으로 작성하세요. 글자 수 제한에 따라 완전한 문장이 되지 않는다면, 다시 생성해주세요."},
             {"role": "user",
              "content": f"다음 정보를 바탕으로 광고글의 내용을 뒷받침하는 서브 광고글을 작성해 주세요: '{maintext}'. '{maintext}' 와는 다른 문장으로 작성하세요. "
                         f"컨셉 - '{item_concept}', 카테고리 - '{item_category}', 추가 정보 - '{add_information}'. "
@@ -74,7 +73,7 @@ async def generate_serve_text(maintext, item_concept, item_category, add_informa
             response = await client.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
             response.raise_for_status()
             response_json = response.json()
-            servetext = response_json['choices'][0]['message']['content'].strip()
+            servetext = response_json['choices'][0]['message']['content'].strip().strip('\"')
             return servetext[:30]  # 서브 광고 문구를 최대 30자 이내로 제한
         except httpx.HTTPStatusError as exc:
             logger.error(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
@@ -180,10 +179,10 @@ def create_banner(request):
                     "message": "배너 조회 성공",
                     "data": {
                         "id": 1,
-                        "maintext": "\"훌륭한 중국산 전자기기, 에어팟으로",
-                        "servetext": "\"프리미엄 다소 강조헤 중국산 전자기기, 지금 확인하세",
-                        "maintext2": "\"편안한 착용감으로 중국산 전자기기의",
-                        "servetext2": "\"중국산 전자기기의 새로운 선택, 탁월한 가성비!\""
+                        "maintext": "훌륭한 중국산 전자기기, 에어팟으로",
+                        "servetext": "프리미엄 다소 강조헤 중국산 전자기기, 지금 확인하세",
+                        "maintext2": "편안한 착용감으로 중국산 전자기기의",
+                        "servetext2": "중국산 전자기기의 새로운 선택, 탁월한 가성비!"
                     }
                 }
             }
