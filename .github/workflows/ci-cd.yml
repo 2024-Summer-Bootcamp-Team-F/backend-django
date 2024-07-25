@@ -1,4 +1,4 @@
-#ci&cd 통합
+#ci/cd 통합
 name: Django CI/CD
 
 on:
