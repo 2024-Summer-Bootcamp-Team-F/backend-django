@@ -2,6 +2,14 @@ global:
   # 전역 스크레이프 간격 설정 (기본값: 15초)
   scrape_interval: 15s
 
+alerting: #추가된 부분
+  alertmanagers: #추가된 부분
+  - static_configs: #추가된 부분
+    - targets: ['alertmanager:9093'] #추가된 부분
+
+rule_files:
+  - /etc/prometheus/alert-rules.yml #추가된 부분
+
 scrape_configs:
   - job_name: 'rabbitmq'
     # RabbitMQ 모니터링 대상 설정
