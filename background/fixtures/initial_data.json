@@ -5,11 +5,10 @@
         "fields": {
             "user": 1,
             "image": 1,
-            "gen_type": "concept",
-            "concept_option": {"category": "cosmetics", "theme": "summer", "num_results": 1},
+            "gen_type": "simple",
             "output_h": 1000,
             "output_w": 1000,
-            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/56d032b7-f828-420d-9995-95f72f82a519.png",
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/fb5d8daa-dc8a-47eb-934a-18db5a2fb197.png",
             "created_at": "2024-07-20T12:00:00Z",
             "updated_at": "2024-07-20T12:00:00Z",
             "is_deleted": false,
@@ -20,30 +19,28 @@
         "model": "background.background",
         "pk": 2,
         "fields": {
-            "user": 2,
-            "image": 2,
-            "gen_type": "concept",
-            "concept_option": {"category": "food", "theme": "spring", "num_results": 1},
+            "user": 1,
+            "image": 1,
+            "gen_type": "color_bg",
             "output_h": 1000,
             "output_w": 1000,
-            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/380d04ef-f7b5-4492-8784-5dcf43ae92ed.png",
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/cef05a50-a86b-4617-8765-151228ce1da3.png",
             "created_at": "2024-07-20T12:00:00Z",
             "updated_at": "2024-07-20T12:00:00Z",
             "is_deleted": false,
             "recreated": false
         }
     },
-     {
+    {
         "model": "background.background",
         "pk": 3,
         "fields": {
             "user": 1,
             "image": 1,
-            "gen_type": "concept",
-            "concept_option": {"category": "cosmetics", "theme": "flower", "num_results": 1},
+            "gen_type": "remove_bg",
             "output_h": 1000,
             "output_w": 1000,
-            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/28b92e6b-36db-478a-b8af-5aeddf0efd6a.png",
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/4da58e57-ffed-46b3-907e-477916d66843.png",
             "created_at": "2024-07-20T12:00:00Z",
             "updated_at": "2024-07-20T12:00:00Z",
             "is_deleted": false,
@@ -54,13 +51,180 @@
         "model": "background.background",
         "pk": 4,
         "fields": {
-            "user": 2,
-            "image": 2,
+            "user": 1,
+            "image": 1,
             "gen_type": "concept",
-            "concept_option": {"category": "food", "theme": "table", "num_results": 1},
+            "concept_option": {"category": "cosmetics", "theme": "winter", "num_results": 1},
             "output_h": 1000,
             "output_w": 1000,
-            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/01097ce4-5192-46f8-a713-c5ec6738c07c.png",
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/07381582-da3f-4ad6-b25c-8218a4251a15.png",
+            "created_at": "2024-07-20T12:00:00Z",
+            "updated_at": "2024-07-20T12:00:00Z",
+            "is_deleted": false,
+            "recreated": false
+        }
+    },
+    {
+        "model": "background.background",
+        "pk": 5,
+        "fields": {
+            "user": 1,
+            "image": 1,
+            "gen_type": "concept",
+            "concept_option": {"category": "cosmetics", "theme": "winter", "num_results": 1},
+            "output_h": 1000,
+            "output_w": 1000,
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/525d0f4e-4f85-48b0-8429-72d0db23839f.png",
+            "created_at": "2024-07-20T12:00:00Z",
+            "updated_at": "2024-07-20T12:00:00Z",
+            "is_deleted": false,
+            "recreated": false
+        }
+    },
+    {
+        "model": "background.background",
+        "pk": 6,
+        "fields": {
+            "user": 1,
+            "image": 1,
+            "gen_type": "concept",
+            "concept_option": {"category": "cosmetics", "theme": "winter", "num_results": 1},
+            "output_h": 1000,
+            "output_w": 1000,
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/e3072f25-1aed-4888-b468-e2d33ab52cdc.png",
+            "created_at": "2024-07-20T12:00:00Z",
+            "updated_at": "2024-07-20T12:00:00Z",
+            "is_deleted": false,
+            "recreated": false
+        }
+    },
+    {
+        "model": "background.background",
+        "pk": 7,
+        "fields": {
+            "user": 1,
+            "image": 1,
+            "gen_type": "concept",
+            "concept_option": {"category": "cosmetics", "theme": "winter", "num_results": 1},
+            "output_h": 1000,
+            "output_w": 1000,
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/348da543-a7ee-4562-9c7f-6a19ab5e5e2f.png",
+            "created_at": "2024-07-20T12:00:00Z",
+            "updated_at": "2024-07-20T12:00:00Z",
+            "is_deleted": false,
+            "recreated": false
+        }
+    },
+     {
+        "model": "background.background",
+        "pk": 8,
+        "fields": {
+            "user": 2,
+            "image": 2,
+            "gen_type": "simple",
+            "output_h": 1000,
+            "output_w": 1000,
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/2e5a2dc7-5502-45a1-8ae6-d8c9cbb36386.png",
+            "created_at": "2024-07-20T12:00:00Z",
+            "updated_at": "2024-07-20T12:00:00Z",
+            "is_deleted": false,
+            "recreated": false
+        }
+    },
+    {
+        "model": "background.background",
+        "pk": 9,
+        "fields": {
+            "user": 1,
+            "image": 1,
+            "gen_type": "remove_bg",
+            "output_h": 1000,
+            "output_w": 1000,
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/c90c3ace-240c-4bda-84ea-db4160781850.png",
+            "created_at": "2024-07-20T12:00:00Z",
+            "updated_at": "2024-07-20T12:00:00Z",
+            "is_deleted": false,
+            "recreated": false
+        }
+    },
+    {
+        "model": "background.background",
+        "pk": 10,
+        "fields": {
+            "user": 1,
+            "image": 1,
+            "gen_type": "color_bg",
+            "output_h": 1000,
+            "output_w": 1000,
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/be2863c9-8c6b-4872-8197-002b1e753983.png",
+            "created_at": "2024-07-20T12:00:00Z",
+            "updated_at": "2024-07-20T12:00:00Z",
+            "is_deleted": false,
+            "recreated": false
+        }
+    },
+    {
+        "model": "background.background",
+        "pk": 11,
+        "fields": {
+            "user": 1,
+            "image": 1,
+            "gen_type": "concept",
+            "concept_option": {"category": "food", "theme": "summer", "num_results": 1},
+            "output_h": 1000,
+            "output_w": 1000,
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/dcba706f-4971-4737-b381-06b4ea1b7a20.png",
+            "created_at": "2024-07-20T12:00:00Z",
+            "updated_at": "2024-07-20T12:00:00Z",
+            "is_deleted": false,
+            "recreated": false
+        }
+    },
+    {
+        "model": "background.background",
+        "pk": 12,
+        "fields": {
+            "user": 1,
+            "image": 1,
+            "gen_type": "concept",
+            "concept_option": {"category": "food", "theme": "summer", "num_results": 1},
+            "output_h": 1000,
+            "output_w": 1000,
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/d7b438d9-da18-4c1a-9a75-f3318378790e.png",
+            "created_at": "2024-07-20T12:00:00Z",
+            "updated_at": "2024-07-20T12:00:00Z",
+            "is_deleted": false,
+            "recreated": false
+        }
+    },
+    {
+        "model": "background.background",
+        "pk": 13,
+        "fields": {
+            "user": 1,
+            "image": 1,
+            "gen_type": "concept",
+            "concept_option": {"category": "food", "theme": "summer", "num_results": 1},
+            "output_h": 1000,
+            "output_w": 1000,
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/fa14244c-4b51-4798-9a11-71c6a02d726f.png",
+            "created_at": "2024-07-20T12:00:00Z",
+            "updated_at": "2024-07-20T12:00:00Z",
+            "is_deleted": false,
+            "recreated": false
+        }
+    },
+    {
+        "model": "background.background",
+        "pk": 14,
+        "fields": {
+            "user": 1,
+            "image": 1,
+            "gen_type": "concept",
+            "concept_option": {"category": "food", "theme": "summer", "num_results": 1},
+            "output_h": 1000,
+            "output_w": 1000,
+            "image_url": "https://summerteamf.s3.ap-northeast-2.amazonaws.com/718c2b2d-6459-441c-a560-ce2e2d481174.png",
             "created_at": "2024-07-20T12:00:00Z",
             "updated_at": "2024-07-20T12:00:00Z",
             "is_deleted": false,
