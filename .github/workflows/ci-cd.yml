@@ -1,6 +1,7 @@
 #ci/cd 통합
 name: Django CI/CD
 
+
 on:
   push:
     branches:
