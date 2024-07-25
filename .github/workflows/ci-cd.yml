@@ -5,10 +5,10 @@ name: Django CI/CD
 on:
   push:
     branches:
-      - test
+      - feat/#173
   pull_request:
     branches:
-      - test
+      - feat/#173
 
 jobs:
   build:
