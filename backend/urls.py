@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/v1/', include('image_resizing.urls')),
     path('api/v1/', include('video.urls')),                                # 'image_resizing' 앱의 URL을 포함
     path('', include('django_prometheus.urls')),                                    # 'django_prometheus' 앱의 URL을 포함
+    path('api/v1/texttovideo/', include('texttovideo.urls')),
 ]
 
 # Swagger JSON 형식 스키마와 UI를 위한 URL 패턴 추가
