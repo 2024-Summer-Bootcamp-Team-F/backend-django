@@ -44,7 +44,7 @@ logstash-formatter
 elasticsearch
 gunicorn==20.1.0
 whitenoise==6.0.0
-
 pytest==8.2.2
 pytest-django==4.8.0
+lumaapi==0.0.4
 

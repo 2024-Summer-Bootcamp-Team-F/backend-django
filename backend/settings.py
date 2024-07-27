@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'django_prometheus',
     'django_celery_beat',
     'corsheaders',
+
 ]
 
 # 미들웨어 설정
@@ -247,5 +248,3 @@ LOGGING = {
         },
     },
 }
-
-

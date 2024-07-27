@@ -28,7 +28,8 @@ urlpatterns = [
     path('api/v1/', include('image.urls')),                                         # 'image' 앱의 URL을 포함
     path('api/v1/', include('background.urls')),                                    # 'background' 앱의 URL을 포함
     path('api/v1/', include('recreated_background.urls')),                          # 'recreated_background' 앱의 URL을 포함
-    path('api/v1/', include('image_resizing.urls')),                                # 'image_resizing' 앱의 URL을 포함
+    path('api/v1/', include('image_resizing.urls')),
+                               # 'image_resizing' 앱의 URL을 포함
     path('', include('django_prometheus.urls')),                                    # 'django_prometheus' 앱의 URL을 포함
 ]
 
