@@ -7,6 +7,7 @@ from .models import Background, Image, User
 from .serializers import BackgroundSerializer
 import requests
 import io
+import uuid
 import base64
 import boto3
 from PIL import Image as PILImage
@@ -15,15 +16,11 @@ import logging
 from django.conf import settings
 from .tasks import generate_background_task
 import redis
-import uuid
+import time
 
-# 로깅 설정
 logger = logging.getLogger(__name__)
-
-# Redis 클라이언트 설정
 redis_client = redis.StrictRedis(host='redis', port=6379, db=0)
 
-# 허용된 이미지 생성 유형
 GEN_TYPES = ['remove_bg', 'color_bg', 'simple', 'concept']
 
 @swagger_auto_schema(method='post',
@@ -32,7 +29,7 @@ GEN_TYPES = ['remove_bg', 'color_bg', 'simple', 'concept']
         properties={
             'user_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID'),
             'image_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Image ID'),
-            'gen_type': openapi.Schema(type=openapi.TYPE_STRING, description='Generation Type', enum=GEN_TYPES),
+            'gen_type': openapi.Schema(type=openapi.TYPE_STRING, description='Generation Type', enum=['remove_bg', 'color_bg', 'simple', 'concept']),
             'output_w': openapi.Schema(type=openapi.TYPE_INTEGER, description='Output Width', default=1000, minimum=200, maximum=2000),
             'output_h': openapi.Schema(type=openapi.TYPE_INTEGER, description='Output Height', default=1000, minimum=200, maximum=2000),
             'concept_option': openapi.Schema(type=openapi.TYPE_OBJECT, description='Concept Option', properties={
@@ -44,7 +41,7 @@ GEN_TYPES = ['remove_bg', 'color_bg', 'simple', 'concept']
         required=['user_id', 'image_id', 'gen_type']
     ),
     responses={
-        202: openapi.Response('AI 이미지 생성 성공', BackgroundSerializer(many=True)),
+        201: openapi.Response('AI 이미지 생성 성공', BackgroundSerializer(many=True)),
         400: 'Bad Request',
         500: 'Internal Server Error'
     }
@@ -62,7 +59,8 @@ def backgrounds_view(request):
         return Response({"error": "user_id, image_id, and gen_type are required"}, status=status.HTTP_400_BAD_REQUEST)
 
     if gen_type not in GEN_TYPES:
-        return Response({"error": f"gen_type is invalid. 가능한 값 : {', '.join(GEN_TYPES)}"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": f"gen_type is invalid. 가능한 값 : {', '.join(GEN_TYPES)}"},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     try:
         user = User.objects.get(id=user_id)
@@ -74,29 +72,33 @@ def backgrounds_view(request):
     except Image.DoesNotExist:
         return Response({"error": "이미지 없음"}, status=status.HTTP_404_NOT_FOUND)
 
-    unique_filename = f"{uuid.uuid4()}.png"
-    s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
-    redis_client.set(f'background_image_url_{image_id}', s3_url)
-
-    logger.info(f"Temporary S3 URL for image_id {image_id}: {s3_url}")
-
     background_instance = Background.objects.create(
         user=user,
         image=image,
         gen_type=gen_type,
         concept_option=json.dumps(concept_option),
         output_w=output_w,
-        output_h=output_h,
-        image_url=s3_url
+        output_h=output_h
     )
 
-    task = generate_background_task.delay(user_id, image_id, gen_type, output_w, output_h, concept_option, unique_filename)
+    task = generate_background_task.delay(user_id, image_id, gen_type, output_w, output_h, concept_option, f"{uuid.uuid4()}.png")
 
-    return Response({
-        "task_id": task.id,
-        "s3_url": s3_url,
-        "background_id": background_instance.id
-    }, status=status.HTTP_202_ACCEPTED)
+    while True:
+        if task.ready():
+            result = task.result
+            if 'error' in result:
+                return Response({"error": result['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            background_instance.image_url = result['image_url']
+            background_instance.save()
+
+            return Response({
+                "task_id": task.id,
+                "background_id": background_instance.id,
+                "s3_url": background_instance.image_url
+            }, status=status.HTTP_201_CREATED)
+
+        time.sleep(10)
 
 @swagger_auto_schema(
     method='get',
@@ -148,7 +150,7 @@ def background_manage(request, backgroundId):
             concept_option = json.loads(background.concept_option)
         except json.JSONDecodeError as e:
             logger.error("JSONDecodeError: %s", e)
-            concept_option = {}
+            concept_option = {}  # 기본값 설정
 
         output_w = background.output_w
         output_h = background.output_h
@@ -165,7 +167,9 @@ def background_manage(request, backgroundId):
 
         url = "https://api.draph.art/v1/generate/"
         headers = {'Authorization': f'Bearer {settings.DRAPHART_API_KEY}'}
-        files = {'image': ('image.jpg', image_file, 'image/jpeg')}
+        files = {
+            'image': ('image.jpg', image_file, 'image/jpeg')
+        }
         data = {
             "username": settings.DRAPHART_USER_NAME,
             "gen_type": gen_type,
@@ -196,14 +200,17 @@ def background_manage(request, backgroundId):
             s3 = boto3.client('s3', region_name=settings.AWS_S3_REGION_NAME)
             unique_filename = f"{uuid.uuid4()}.png"
             s3.upload_fileobj(png_image_bytes, settings.AWS_STORAGE_BUCKET_NAME, unique_filename, ExtraArgs={'ContentType': 'image/png'})
-            s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
+            s3_url = f"http://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
 
         except Exception as e:
             logger.error("Error uploading to S3: %s", e)
-            return Response({"error": "Error uploading to S3", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "Failed to upload image to S3", "details": str(e)},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         background.image_url = s3_url
+        background.recreated = True
         background.save()
+
         serializer = BackgroundSerializer(background)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -214,7 +221,7 @@ def background_manage(request, backgroundId):
             s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=file_key)
         except Exception as e:
             logger.error("S3 파일 삭제 오류: %s", e)
-            return Response({"error": "Failed to delete image from S3", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "S3 파일 삭제 오류", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         background.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "Image deleted successfully."}, status=status.HTTP_200_OK)

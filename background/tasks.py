@@ -1,15 +1,14 @@
-import time
-import requests
-import logging
 from celery import shared_task
 from .models import Background, Image, User
 from .serializers import BackgroundSerializer
+import requests
 import io
 import base64
 import boto3
 from PIL import Image as PILImage
 import json
 from django.conf import settings
+import logging
 import redis
 
 logger = logging.getLogger(__name__)
@@ -52,35 +51,13 @@ def generate_background_task(user_id, image_id, gen_type, output_w, output_h, co
                           ExtraArgs={'ContentType': 'image/png'})
         s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
 
-        # URL이 유효할 때까지 대기
-        max_attempts = 10  # 최대 재시도 횟수
-        attempt = 0  # 현재 시도 횟수
-
-        while attempt < max_attempts:
-            try:
-
-                response = requests.head(s3_url)
-                if response.status_code == 200:
-                    break
-            except requests.RequestException as e:
-                logger.warning("Failed to access S3 URL on attempt %d: %s", attempt + 1, e)
-            time.sleep(30)  # 30초 대기 후 재시도
-            attempt += 1
-
-              
-        else:
-            logger.error("Image URL %s was not accessible after %d attempts.", s3_url, max_attempts)  # 실패 로그 기록
-            redis_client.set(f'background_image_error_{image_id}', 'Failed to access image URL')
-            return {"error": "Failed to access image URL"}  # 오류 메시지 반환
-
-        # Background 인스턴스 업데이트
         background_image = Background.objects.get(image=image, gen_type=gen_type, concept_option=json.dumps(concept_option), output_w=output_w, output_h=output_h)
         background_image.image_url = s3_url
         background_image.save()
 
-        redis_client.set(f'background_image_url_{image_id}', s3_url)
+        redis_client.delete(f'background_image_url_{image_id}')
+
         return BackgroundSerializer(background_image).data
     except Exception as e:
         logger.error("Error in generate_background_task: %s", e)
-        redis_client.set(f'background_image_error_{image_id}', str(e))
         return {"error": str(e)}
