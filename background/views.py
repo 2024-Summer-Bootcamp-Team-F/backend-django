@@ -1,4 +1,3 @@
-#background/views.py
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -45,7 +44,7 @@ GEN_TYPES = ['remove_bg', 'color_bg', 'simple', 'concept']
         required=['user_id', 'image_id', 'gen_type']
     ),
     responses={
-        201: openapi.Response('AI 이미지 생성 성공', BackgroundSerializer(many=True)),
+        202: openapi.Response('AI 이미지 생성 성공', BackgroundSerializer(many=True)),
         400: 'Bad Request',
         500: 'Internal Server Error'
     }
@@ -201,12 +200,10 @@ def background_manage(request, backgroundId):
 
         except Exception as e:
             logger.error("Error uploading to S3: %s", e)
-            return Response({"error": "Failed to upload image to S3", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "Error uploading to S3", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         background.image_url = s3_url
-        background.recreated = True
         background.save()
-
         serializer = BackgroundSerializer(background)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
