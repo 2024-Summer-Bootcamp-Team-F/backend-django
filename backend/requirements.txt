@@ -49,5 +49,3 @@ pytest-django==4.8.0
 fal-client
 openai
 langdetect
-
-

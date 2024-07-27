@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'django_prometheus',
     'django_celery_beat',
     'corsheaders',
+    'video',
     'texttovideo',
 ]
 
@@ -251,3 +252,6 @@ LOGGING = {
         },
     },
 }
+
+VIDEO_API_KEY = env('VIDEO_API_KEY')
+AWS_STORAGE_BUCKET_NAME_VIDEO = env('AWS_STORAGE_BUCKET_NAME_VIDEO')
