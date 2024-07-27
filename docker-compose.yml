@@ -1,36 +1,41 @@
-version: "3.8"
+#docker.compose.yml
+version: "3.9"  # 최신 버전 사용
 
 services:
   mysqldb:
-    build: ./db  # MySQL 데이터베이스 이미지 빌드 경로
-    container_name: mysqldb  # MySQL 컨테이너 이름
+    build: ./db
+    container_name: mysqldb
     env_file:
-      - "./db/.env"  # 환경 변수 파일 경로
+      - "./db/.env"
     ports:
-      - "3306:3306"  # 호스트:컨테이너 포트 매핑
+      - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql  # 데이터 저장소 마운트
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
 
   backend:
     build:
-      context: ./backend  # 백엔드 애플리케이션 빌드 컨텍스트
-      dockerfile: Dockerfile  # Dockerfile 경로
-    container_name: backend  # 백엔드 컨테이너 이름
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
     ports:
-      - "8000:8000"  # 호스트:컨테이너 포트 매핑
+      - "8000:8000"
     volumes:
-      - ./:/app  # 현재 디렉토리를 /app에 마운트
-      - ./logs:/app/logs  # 로그 디렉토리 추가
-    restart: always  # 컨테이너 자동 재시작 설정
+      - ./:/app
+      - ./logs:/app/logs
+    restart: always
     depends_on:
-      - mysqldb  # 종속 서비스
+      - mysqldb
       - rabbitmq
       - redis
+    networks:
+      - app-network
     command: >
       bash -c "python wait_mysql.py &&
       python manage.py makemigrations &&
       python manage.py migrate &&
-      gunicorn -w 4 -b 0.0.0.0:8000 backend.wsgi:application"  # 백엔드 애플리케이션 실행 명령
+      gunicorn -w 4 -b 0.0.0.0:8000 backend.wsgi:application"
 
   nginx:
     container_name: nginx
@@ -40,132 +45,170 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf # 호스트의 nginx 폴더와 컨테이너의 /etc/nginx/conf.d 폴더를 공유
-    restart: always  # 컨테이너 자동 재시작 설정
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    restart: always
     depends_on:
       - backend
+    networks:
+      - app-network
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
   rabbitmq:
-    image: "rabbitmq:3-management"  # RabbitMQ 이미지
-    container_name: rabbitmq  # RabbitMQ 컨테이너 이름
+    image: "rabbitmq:3-management"
+    container_name: rabbitmq
     ports:
-      - "5672:5672"  # AMQP 포트
-      - "15672:15672"  # 관리 콘솔 포트
-      - "15692:15692"  # RabbitMQ Prometheus Exporter 포트
+      - "5672:5672"
+      - "15672:15672"
+      - "15692:15692"
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq  # 데이터 저장소 마운트
+      - rabbitmq_data:/var/lib/rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: "guest"  # 기본 사용자 설정
-      RABBITMQ_DEFAULT_PASS: "guest"  # 기본 비밀번호 설정
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+    networks:
+      - app-network
     command: >
       bash -c "rabbitmq-plugins enable rabbitmq_prometheus &&
-      rabbitmq-server"  # RabbitMQ 서버 실행 명령
+      rabbitmq-server"
 
   redis:
-    image: redis  # Redis 이미지
-    container_name: redis  # Redis 컨테이너 이름
+    image: redis
+    container_name: redis
     ports:
-      - "6379:6379"  # Redis 포트 매핑
+      - "6379:6379"
+    networks:
+      - app-network
 
   celery:
     build:
-      context: ./backend  # Celery 빌드 컨텍스트
-      dockerfile: Dockerfile  # Dockerfile 경로
-    container_name: celery  # Celery 컨테이너 이름
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: celery
     volumes:
-      - ./:/app  # 현재 디렉토리를 /app에 마운트
-      - ./logs:/app/logs  # 로그 디렉토리 추가
-    restart: always  # 컨테이너 자동 재시작 설정
+      - ./:/app
+      - ./logs:/app/logs
+    restart: always
     depends_on:
-      - backend  # 종속 서비스
+      - backend
       - rabbitmq
       - redis
+    networks:
+      - app-network
     command: celery -A backend worker --loglevel=info --uid=nobody
 
-
   prometheus:
-    image: prom/prometheus:latest  # Prometheus 이미지
-    container_name: prometheus  # Prometheus 컨테이너 이름
+    image: prom/prometheus:latest
+    container_name: prometheus
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml  # Prometheus 설정 파일 마운트
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alert-rules.yml:/etc/prometheus/alert-rules.yml
     ports:
-      - "9090:9090"  # Prometheus 포트 매핑
+      - "9090:9090"
     depends_on:
-      - backend  # 종속 서비스
+      - backend
+    networks:
+      - app-network
+
+  alertmanager:
+    image: prom/alertmanager:main
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./alertmanager/tmp:/data/
+    networks:
+      - app-network
+    command: --config.file=/etc/alertmanager/alertmanager.yml --log.level=debug
 
   grafana:
-    image: grafana/grafana:latest  # Grafana 이미지
-    container_name: grafana  # Grafana 컨테이너 이름
+    image: grafana/grafana:latest
+    container_name: grafana
     ports:
-      - "3000:3000"  # Grafana 포트 매핑
+      - "3000:3000"
     volumes:
-      - grafana_data:/var/lib/grafana  # 데이터 저장소 마운트
+      - grafana_data:/var/lib/grafana
     depends_on:
-      - prometheus  # 종속 서비스
+      - prometheus
+    networks:
+      - app-network
 
   node-exporter:
-    image: prom/node-exporter:latest  # Node Exporter 이미지
-    container_name: node-exporter  # Node Exporter 컨테이너 이름
+    image: prom/node-exporter:latest
+    container_name: node-exporter
     ports:
-      - "9100:9100"  # Node Exporter 포트 매핑
-    restart: unless-stopped  # 컨테이너 자동 재시작 설정
+      - "9100:9100"
+    restart: unless-stopped
     volumes:
-      - /proc:/host/proc:ro  # 시스템 경로 마운트
+      - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
+    networks:
+      - app-network
     command:
-      - '--path.procfs=/host/proc'  # Node Exporter 명령줄 인수
+      - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
+      - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)'
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor  # cAdvisor 이미지
-    container_name: cadvisor  # cAdvisor 컨테이너 이름
+    image: gcr.io/cadvisor/cadvisor
+    container_name: cadvisor
     ports:
-      - "8080:8080"  # cAdvisor 포트 매핑
+      - "8080:8080"
     volumes:
-      - /:/rootfs:ro  # 시스템 경로 마운트
+      - /:/rootfs:ro
       - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
       - /var/lib/docker/:/var/lib/docker:ro
-    restart: unless-stopped  # 컨테이너 자동 재시작 설정
+    restart: unless-stopped
+    networks:
+      - app-network
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9  # Elasticsearch 이미지
-    container_name: elasticsearch  # Elasticsearch 컨테이너 이름
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+    container_name: elasticsearch
     environment:
-      - discovery.type=single-node  # 단일 노드 설정
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m  # Java 메모리 설정
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - "9200:9200"  # Elasticsearch 포트 매핑
+      - "9200:9200"
     volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data  # 데이터 저장소 마운트
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - app-network
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:7.17.9  # Logstash 이미지
-    container_name: logstash  # Logstash 컨테이너 이름
+    image: docker.elastic.co/logstash/logstash:7.17.9
+    container_name: logstash
     volumes:
-      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf  # Logstash 설정 파일 마운트
+      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
       - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
-      - ./logs:/usr/share/logstash/logs  # 로그 디렉토리 마운트
+      - ./logs:/usr/share/logstash/logs
     ports:
-      - "5044:5044"  # Logstash Beats input 포트 매핑
-      - "9600:9600"  # Logstash API 포트 추가
+      - "5044:5044"
+      - "9600:9600"
     depends_on:
-      - elasticsearch  # 종속 서비스
+      - elasticsearch
+    networks:
+      - app-network
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.9  # Kibana 이미지
-    container_name: kibana  # Kibana 컨테이너 이름
+    image: docker.elastic.co/kibana/kibana:7.17.9
+    container_name: kibana
     ports:
-      - "5601:5601"  # Kibana 포트 매핑
+      - "5601:5601"
     depends_on:
-      - elasticsearch  # 종속 서비스
+      - elasticsearch
+    networks:
+      - app-network
 
 volumes:
-  mysql_data:  # MySQL 데이터 볼륨
-  rabbitmq_data:  # RabbitMQ 데이터 볼륨
-  grafana_data:  # Grafana 데이터 볼륨
-  elasticsearch_data:  # Elasticsearch 데이터 볼륨
+  mysql_data:
+  rabbitmq_data:
+  grafana_data:
+  elasticsearch_data:
+
+networks:
+  app-network:
+    driver: bridge
