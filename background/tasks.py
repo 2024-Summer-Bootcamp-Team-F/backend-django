@@ -58,13 +58,16 @@ def generate_background_task(user_id, image_id, gen_type, output_w, output_h, co
 
         while attempt < max_attempts:
             try:
-                response = requests.head(s3_url)  # s3_url에 대해 HEAD 요청을 보냄
-                if response.status_code == 200:  # HTTP 상태 코드가 200이면 URL이 유효함
-                    break  # 루프 종료
-            except requests.RequestException as e:  # 요청 중 예외 발생 시
-                logger.warning("Failed to access S3 URL on attempt %d: %s", attempt + 1, e)  # 경고 로그 기록
-            time.sleep(60)  # 1분(60초) 대기 후 재시도
-            attempt += 1  # 시도 횟수 증가
+
+                response = requests.head(s3_url)
+                if response.status_code == 200:
+                    break
+            except requests.RequestException as e:
+                logger.warning("Failed to access S3 URL on attempt %d: %s", attempt + 1, e)
+            time.sleep(30)  # 30초 대기 후 재시도
+            attempt += 1
+
+              
         else:
             logger.error("Image URL %s was not accessible after %d attempts.", s3_url, max_attempts)  # 실패 로그 기록
             redis_client.set(f'background_image_error_{image_id}', 'Failed to access image URL')
