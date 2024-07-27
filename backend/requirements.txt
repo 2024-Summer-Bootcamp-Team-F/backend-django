@@ -50,3 +50,4 @@ fal-client
 openai
 langdetect
 
+
