@@ -70,7 +70,7 @@ def generate_background_task(user_id, image_id, gen_type, output_w, output_h, co
                     break
             except requests.RequestException as e:
                 logger.warning("Failed to access S3 URL on attempt %d: %s", attempt + 1, e)
-            time.sleep(10)  # 10초 대기 후 재시도
+            time.sleep(60)  # 60초 대기 후 재시도
             attempt += 1
         else:
             logger.error("Image URL %s was not accessible after %d attempts.", s3_url, max_attempts)
