@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'django_prometheus',
     'django_celery_beat',
     'corsheaders',
+    'video',
 ]
 
 # 미들웨어 설정
@@ -248,4 +249,4 @@ LOGGING = {
     },
 }
 
-
+VIDEO_API_KEY = env('VIDEO_API_KEY')
