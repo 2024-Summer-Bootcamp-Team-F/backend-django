@@ -8,42 +8,42 @@ from .serializers import VideoSerializer
 from background.models import Background
 from .tasks import generate_video_task
 import uuid
-from django.conf import settings
+from image.models import Image
 
 @swagger_auto_schema(method='post',
                      request_body=openapi.Schema(
                          type=openapi.TYPE_OBJECT,
                          properties={
                              'user_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the user'),
-                             'background_id': openapi.Schema(type=openapi.TYPE_INTEGER,
-                                                             description='ID of the background'),
+                             'image_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the image'),
+                             'text_prompt': openapi.Schema(type=openapi.TYPE_STRING, description='Text prompt for video generation'),
                          }
                      ),
                      responses={201: openapi.Response('Created', openapi.Schema(
                          type=openapi.TYPE_OBJECT,
                          properties={
-                             'video_id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                             'video_url': openapi.Schema(type=openapi.TYPE_STRING)
+                             'video_id': openapi.Schema(type=openapi.TYPE_INTEGER)
                          }
                      ))})
 @api_view(['POST'])
 def videos_create(request):
     user_id = request.data.get('user_id')
-    background_id = request.data.get('background_id')
+    image_id = request.data.get('image_id')
+    text_prompt = request.data.get('text_prompt')
+
+    if not text_prompt:
+        return Response({"error": "Text prompt is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        background = Background.objects.get(id=background_id)
+        image = Image.objects.get(id=image_id)
     except Background.DoesNotExist:
         return Response({"error": "Background not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    unique_filename = f"videos/{uuid.uuid4()}.mp4"
-    s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
+    video = Video.objects.create(user_id=user_id, image=image)
+    unique_filename = f"{uuid.uuid4()}.mp4"
+    generate_video_task.delay(video.id, image.image_url, unique_filename, text_prompt)
 
-    video = Video.objects.create(user_id=user_id, background=background, video_url=s3_url)
-    generate_video_task.delay(video.id, background.image_url, unique_filename)
-
-    return Response({'video_id': video.id, 'video_url': s3_url}, status=status.HTTP_201_CREATED)
-
+    return Response({'video_id': video.id}, status=status.HTTP_201_CREATED)
 
 @api_view(['GET', 'PUT', 'DELETE'])
 def video_manage(request, videoId):

@@ -6,19 +6,20 @@ from django.conf import settings
 from .models import Video
 import logging
 import io
-import uuid
+import time
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
 @shared_task
-def generate_video_task(video_id, image_url, unique_filename):
+def generate_video_task(video_id, image_url, unique_filename, text_prompt):
     try:
         video = Video.objects.get(id=video_id)
         api_key = settings.VIDEO_API_KEY
-        url = "https://api.aivideoapi.com/runway/generate/image"
+        url = "https://api.aivideoapi.com/runway/generate/imageDescription"
 
         payload = {
+            "text_prompt": text_prompt,
             "img_prompt": image_url,
             "motion": 5,
             "seed": 0,
@@ -35,8 +36,35 @@ def generate_video_task(video_id, image_url, unique_filename):
         response = requests.post(url, json=payload, headers=headers)
 
         if response.status_code == 200:
-            video_url = response.json().get('video_url')
-            if video_url:
+            uuid = response.json().get('uuid')
+            if uuid:
+                status_url = f"https://api.aivideoapi.com/status?uuid={uuid}"
+                headers = {
+                    "accept": "application/json",
+                    "Authorization": f"Bearer {api_key}"
+                }
+
+                timeout = 30 * 60  # 30 minutes in seconds
+
+                elapsed_time = 0
+                polling_interval = 15  # seconds
+
+                while True:
+                    time.sleep(polling_interval)
+                    elapsed_time += polling_interval
+
+                    if elapsed_time > timeout:
+                        logger.error("Polling timeout exceeded 30 minutes")
+                        return
+
+                    status_response = requests.get(status_url, headers=headers).json()
+                    if status_response['status'] == 'success':
+                        video_url = status_response['url']
+                        break
+                    elif status_response['status'] == 'failed':
+                        logger.error("Video generation failed")
+                        return
+
                 video_response = requests.get(video_url)
                 video_response.raise_for_status()  # Raise an error on bad status
                 video_content = video_response.content
@@ -49,7 +77,7 @@ def generate_video_task(video_id, image_url, unique_filename):
                 else:
                     logger.error("S3 upload failed")
             else:
-                logger.error("No video URL returned by API")
+                logger.error("No UUID returned by API")
         else:
             logger.error(f"API request failed: {response.status_code}, {response.content}")
     except Exception as e:
@@ -63,9 +91,9 @@ def upload_to_s3(file_content, file_name, content_type):
                       region_name=settings.AWS_S3_REGION_NAME)
 
     try:
-        s3.upload_fileobj(io.BytesIO(file_content), settings.AWS_STORAGE_BUCKET_NAME, file_name,
-                          ExtraArgs={'ContentType': 'video/mp4'})
-        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_name}"
+        s3.upload_fileobj(io.BytesIO(file_content), settings.AWS_STORAGE_BUCKET_NAME_VIDEO, file_name,
+                          ExtraArgs={'ContentType': content_type})
+        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME_VIDEO}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_name}"
         return s3_url
     except NoCredentialsError:
         logger.error("Credentials not available")
