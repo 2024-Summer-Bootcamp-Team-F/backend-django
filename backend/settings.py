@@ -21,6 +21,9 @@ env = environ.Env()
 with open(env_file, 'r', encoding='utf-8') as f:
     env.read_env(f)
 
+# FAL_KEY 키 설정
+FAL_KEY = env('FAL_KEY')
+
 # Django의 SECRET_KEY 및 OpenAI API 키 설정
 SECRET_KEY = env('SECRET_KEY')
 OPENAI_API_KEY = env('OPENAI_API_KEY')
@@ -52,6 +55,7 @@ INSTALLED_APPS = [
     'django_prometheus',
     'django_celery_beat',
     'corsheaders',
+    'texttovideo',
 ]
 
 # 미들웨어 설정
