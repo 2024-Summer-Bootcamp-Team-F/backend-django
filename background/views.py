@@ -16,13 +16,17 @@ import logging
 from django.conf import settings
 from .tasks import generate_background_task
 import redis
-import time
 
+# 로깅 설정
 logger = logging.getLogger(__name__)
+
+# Redis 클라이언트 설정
 redis_client = redis.StrictRedis(host='redis', port=6379, db=0)
 
+# 허용된 이미지 생성 유형
 GEN_TYPES = ['remove_bg', 'color_bg', 'simple', 'concept']
 
+# Swagger를 사용하여 API 문서화
 @swagger_auto_schema(method='post',
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
@@ -72,34 +76,29 @@ def backgrounds_view(request):
     except Image.DoesNotExist:
         return Response({"error": "이미지 없음"}, status=status.HTTP_404_NOT_FOUND)
 
+    unique_filename = f"{uuid.uuid4()}.png"
+    s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
+    redis_client.set(f'background_image_url_{image_id}', s3_url)
+
+    logger.info(f"Temporary S3 URL for image_id {image_id}: {s3_url}")
+
     background_instance = Background.objects.create(
         user=user,
         image=image,
         gen_type=gen_type,
         concept_option=json.dumps(concept_option),
         output_w=output_w,
-        output_h=output_h
+        output_h=output_h,
+        image_url=s3_url
     )
 
-    task = generate_background_task.delay(user_id, image_id, gen_type, output_w, output_h, concept_option, f"{uuid.uuid4()}.png")
+    task = generate_background_task.delay(user_id, image_id, gen_type, output_w, output_h, concept_option, unique_filename)
 
-    while True:
-        if task.ready():
-            result = task.result
-            if 'error' in result:
-                return Response({"error": result['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            background_instance.image_url = result['image_url']
-            background_instance.save()
-
-            return Response({
-                "task_id": task.id,
-                "background_id": background_instance.id,
-                "s3_url": background_instance.image_url
-            }, status=status.HTTP_201_CREATED)
-
-        time.sleep(10)
-
+    return Response({
+        "task_id": task.id,
+        "s3_url": s3_url,
+        "background_id": background_instance.id
+    }, status=status.HTTP_202_ACCEPTED)
 @swagger_auto_schema(
     method='get',
     operation_id='생성된 이미지 조회',
