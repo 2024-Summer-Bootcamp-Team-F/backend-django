@@ -11,8 +11,12 @@ from django.conf import settings
 import logging
 import redis
 
+# 로깅 설정
 logger = logging.getLogger(__name__)
+
+# Redis 클라이언트 설정
 redis_client = redis.StrictRedis(host='redis', port=6379, db=0)
+
 
 @shared_task
 def generate_background_task(user_id, image_id, gen_type, output_w, output_h, concept_option, unique_filename):
@@ -23,6 +27,7 @@ def generate_background_task(user_id, image_id, gen_type, output_w, output_h, co
         image_response = requests.get(image_url)
         image_response.raise_for_status()
         image_file = io.BytesIO(image_response.content)
+
         url = "https://api.draph.art/v1/generate/"
         headers = {'Authorization': f'Bearer {settings.DRAPHART_API_KEY}'}
         files = {'image': ('image.jpg', image_file, 'image/jpeg')}
@@ -37,27 +42,31 @@ def generate_background_task(user_id, image_id, gen_type, output_w, output_h, co
         }
 
         response = requests.post(url, headers=headers, data=data, files=files)
-        response_data = response.content
-        image_data = base64.b64decode(response_data)
-        image_bytes = io.BytesIO(image_data)
-        pil_image = PILImage.open(image_bytes)
-        pil_image = pil_image.convert('RGB')
-        png_image_bytes = io.BytesIO()
-        pil_image.save(png_image_bytes, format='PNG')
-        png_image_bytes.seek(0)
+        response.raise_for_status()
+        response_data = response.json()
+        base64_data = response_data
 
-        s3 = boto3.client('s3', region_name=settings.AWS_S3_REGION_NAME)
-        s3.upload_fileobj(png_image_bytes, settings.AWS_STORAGE_BUCKET_NAME, unique_filename,
-                          ExtraArgs={'ContentType': 'image/png'})
-        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
+        for i, res_img in enumerate(base64_data):
+            image = PILImage.open(io.BytesIO(base64.b64decode(res_img.split(',', 1)[0])))
+            png_image_bytes = io.BytesIO()
+            image.save(png_image_bytes, format='PNG')
+            png_image_bytes.seek(0)
 
-        background_image = Background.objects.get(image=image, gen_type=gen_type, concept_option=json.dumps(concept_option), output_w=output_w, output_h=output_h)
-        background_image.image_url = s3_url
-        background_image.save()
+            s3 = boto3.client('s3', region_name=settings.AWS_S3_REGION_NAME)
+            s3.upload_fileobj(png_image_bytes, settings.AWS_STORAGE_BUCKET_NAME, unique_filename,
+                              ExtraArgs={'ContentType': 'image/png'})
+            s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{unique_filename}"
 
-        redis_client.delete(f'background_image_url_{image_id}')
+            # Background 인스턴스 업데이트
+            background_image = Background.objects.get(image=image, gen_type=gen_type,
+                                                      concept_option=json.dumps(concept_option), output_w=output_w,
+                                                      output_h=output_h)
+            background_image.image_url = s3_url
+            background_image.save()
 
-        return BackgroundSerializer(background_image).data
+            redis_client.delete(f'background_image_url_{image_id}')
+
+            return BackgroundSerializer(background_image).data
     except Exception as e:
         logger.error("Error in generate_background_task: %s", e)
         return {"error": str(e)}
