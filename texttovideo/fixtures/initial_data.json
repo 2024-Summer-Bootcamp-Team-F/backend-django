@@ -1,0 +1,26 @@
+[
+  {
+    "model": "texttovideo.texttovideo",
+    "pk": 1,
+    "fields": {
+      "user": 1,
+      "prompt": "Lamborghini Running Through Dark City",
+      "video_url": "https://storage.googleapis.com/isolate-dev-hot-rooster_toolkit_bucket/github_110602490/6f222868c9b14a7da72cbfb91dae75b6_reenc-tmprivmndeh.mp4?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=gke-service-account%40isolate-dev-hot-rooster.iam.gserviceaccount.com%2F20240728%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240728T075156Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=4ae253a7494b51cc53f15c164fdaf0a2ec78e2848c388729168247b9e8923eaa937bafe258550769b3745927a14730e4d8d75e554bf79e14e13ba3d045786909a70cc1674942ef17e34c4d1e6505c582babfb9c00068f36d09f0bd3207a647d76cf1ffb039680784f1a5420303d9b65e7479c3be82b02f796824304ab15742f50a63377dee09aaa6cb7b469bb46f0d175649680c4dcda797044d8f4da6633b108163cb1d514f208336db45b1662603159424ddc11e9daefdc0199890e2611e12eead927f9c29eb25ea15816ea38f9bdc8748f18cc37d594bf160cadaf3054766d7baa95c7d47638af816e009e5feac4997a91ac95f129d8eeda1b81a0632d732",
+      "created_at": "2024-07-28T00:00:00Z",
+      "updated_at": "2024-07-28T00:00:00Z",
+      "is_deleted": false
+    }
+  },
+  {
+    "model": "texttovideo.texttovideo",
+    "pk": 2,
+    "fields": {
+      "user": 1,
+      "prompt": "에어팟을 광고해줘",
+      "video_url": "https://storage.googleapis.com/isolate-dev-hot-rooster_toolkit_bucket/github_110602490/3a8138813abb4e269d25bf14dbde5932_reenc-tmpwcmvl1ni.mp4?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=gke-service-account%40isolate-dev-hot-rooster.iam.gserviceaccount.com%2F20240728%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240728T075415Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=7fef54d7be8ad5c17a016ff5fd47ae472f46ee0f87ff280bd0ab4ae5477b8b0484cbe0f693e97f6fc8b0b2e92786f007e6b4660319b5377b238a0e557dbda5c6006395024b71cea4bdab28c46d7bbf6999157c72965dc8002d505e215048d82316a3b711dddfd44a4402a2d4837caee739240119608a1d28b682272b8916c67ba16df99c866b4f97f0c08951a5924147231aae8715dccf08485c9391097cac1ce4d3a630294bd921a54df4e8878a4d59361d943fd28ba153d71b64db473b788dd390ca21c38dbb39df1ff02ea423c9a936ce07c6aaffbfa4e6e97638cc2a98a5c816c12f2c0851844180151d63e26d07ad1b942f408c75d376a539a8e7b0887a",
+      "created_at": "2024-07-28T00:00:00Z",
+      "updated_at": "2024-07-28T00:00:00Z",
+      "is_deleted": false
+    }
+  }
+]
