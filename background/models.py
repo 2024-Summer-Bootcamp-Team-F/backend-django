@@ -8,7 +8,7 @@ class Background(models.Model):
     concept_option = models.TextField(default='default_concept')  # 기본값 설정
     output_h = models.IntegerField()
     output_w = models.IntegerField()
-    image_url = models.CharField(max_length=500)
+    image_url = models.CharField(max_length=500, null=True, blank=True)  # null 값을 허용
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_deleted = models.BooleanField(default=False)
