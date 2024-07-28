@@ -38,7 +38,7 @@ Pillow==10.0.0
 django-cors-headers==3.13.0
 httpx==0.24.0
 python-dotenv==0.21.0
-django-prometheus
+django-prometheus==2.3.1
 django-redis==5.2.0
 logstash-formatter
 elasticsearch
@@ -46,6 +46,6 @@ gunicorn==20.1.0
 whitenoise==6.0.0
 pytest==8.2.2
 pytest-django==4.8.0
-fal-client
-openai
-langdetect
+fal-client==0.4.1
+openai==1.37.1
+langdetect==1.0.9
