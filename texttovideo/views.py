@@ -1,29 +1,37 @@
 import logging
-import fal_client
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+import boto3
+import uuid
+import requests
+from django.conf import settings
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from .models import TextToVideo
 from .serializers import TextToVideoSerializer
 from user.models import User
 import environ
 import langdetect
-import requests
+import fal_client
 
 # 환경 변수 로드
 env = environ.Env()
 environ.Env.read_env()
 
-# FAL API 키 설정
-fal_api_key = env("FAL_KEY")
-openai_api_key = env("OPENAI_API_KEY")
+# AWS S3 클라이언트 설정
+s3_client = boto3.client('s3',
+                         aws_access_key_id=env("AWS_ACCESS_KEY_ID"),
+                         aws_secret_access_key=env("AWS_SECRET_ACCESS_KEY"),
+                         region_name=env("AWS_S3_REGION_NAME"))
 
 # 로거 설정
 logger = logging.getLogger(__name__)
 
+# 비디오 생성을 위한 FAL API 키 설정
+fal_api_key = env("FAL_KEY")
+openai_api_key = env("OPENAI_API_KEY")
 
 # 텍스트를 비디오로 변환하는 함수
 def generate_video(prompt):
@@ -42,7 +50,6 @@ def generate_video(prompt):
     )
     result = handler.get()
     return result['video']['url']
-
 
 # GPT-3.5 Turbo를 사용하여 한국어를 영어로 번역하는 함수
 def translate_to_english(korean_text):
@@ -65,8 +72,16 @@ def translate_to_english(korean_text):
     english_text = response_json['choices'][0]['message']['content'].strip().strip('\"')
     return english_text
 
+# URL에서 파일 다운로드 함수
+def download_file(url, local_filename):
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        with open(local_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+    return local_filename
 
-# Swagger를 이용한 API 문서화와 비디오 생성 API
+# 비디오 생성 API (POST)
 @swagger_auto_schema(
     method='post',
     operation_id='비디오 생성',
@@ -74,8 +89,8 @@ def translate_to_english(korean_text):
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
-            'prompt': openapi.Schema(type=openapi.TYPE_STRING, description='The prompt for video generation'),
-            'user_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the user creating the video'),
+            'prompt': openapi.Schema(type=openapi.TYPE_STRING, description='비디오 생성 프롬프트'),
+            'user_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='비디오를 생성하는 사용자의 ID'),
         },
         required=['prompt', 'user_id']
     ),
@@ -94,7 +109,7 @@ def translate_to_english(korean_text):
                 'application/json': {
                     "id": 1,
                     "prompt": "A rocket flying that is about to take off",
-                    "video_url": "https://storage.googleapis.com/example.mp4",
+                    "video_url": "https://summerteamfvideo.s3.amazonaws.com/example.mp4",
                 }
             }
         ),
@@ -126,10 +141,24 @@ def create_video(request):
         # 비디오 생성
         video_url = generate_video(translated_prompt)
 
+        # URL에서 파일 다운로드
+        local_filename = f"/tmp/{uuid.uuid4()}.mp4"
+        download_file(video_url, local_filename)
+
+        # S3에 비디오 업로드
+        unique_filename = f"{uuid.uuid4()}.mp4"
+        s3_client.upload_file(
+            local_filename,
+            settings.AWS_STORAGE_BUCKET_NAME_VIDEO,
+            unique_filename,
+            ExtraArgs={'ContentType': 'video/mp4', 'ContentDisposition': 'inline'}
+        )
+        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME_VIDEO}.s3.amazonaws.com/{unique_filename}"
+
         # TextToVideo 객체 생성 및 저장
         video = TextToVideo.objects.create(
             prompt=prompt,
-            video_url=video_url,
+            video_url=s3_url,
             user=user
         )
 
@@ -144,8 +173,7 @@ def create_video(request):
     return Response({"code": 400, "message": "비디오 생성 실패", "errors": serializer.errors},
                     status=status.HTTP_400_BAD_REQUEST)
 
-
-# 특정 TextToVideo 객체 조회, 수정, 삭제 API
+# 특정 TextToVideo 객체 조회, 수정, 삭제 API (GET, DELETE)
 @swagger_auto_schema(
     method='get',
     operation_id='비디오 조회',
@@ -165,7 +193,7 @@ def create_video(request):
                 'application/json': {
                     "id": 1,
                     "prompt": "A rocket flying that is about to take off",
-                    "video_url": "https://storage.googleapis.com/example.mp4",
+                    "video_url": "https://summerteamfvideo.s3.amazonaws.com/example.mp4",
                 }
             }
         ),
