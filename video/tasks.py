@@ -1,25 +1,68 @@
+import logging
 import boto3
 import requests
 from celery import shared_task
 from botocore.exceptions import NoCredentialsError
-from django.conf import settings
 from .models import Video
-import logging
 import io
 import time
+import openai
+import re
+import environ
+
+# 환경 변수 로드
+env = environ.Env()
+environ.Env.read_env()
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
+# OpenAI API 키 설정
+openai.api_key = env("OPENAI_API_KEY")
+
+def is_korean(text):
+    # 간단하게 한국어 문자가 포함되어 있는지 확인
+    return bool(re.search('[\u3131-\u3163\uac00-\ud7a3]', text))
+
+def translate_text(text, source_language='ko', target_language='en'):
+    try:
+        headers = {
+            'Authorization': f'Bearer {openai.api_key}',  # OpenAI API 키를 헤더에 포함
+            'Content-Type': 'application/json'
+        }
+        data = {
+            "model": "gpt-3.5-turbo",
+            "messages": [
+                {"role": "system", "content": f"Translate the following text from {source_language} to {target_language}."},
+                {"role": "user", "content": text}
+            ],
+            "max_tokens": 100  # 최대 토큰 수를 100으로 설정
+        }
+
+        response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
+        response.raise_for_status()
+        response_json = response.json()
+        translation = response_json['choices'][0]['message']['content'].strip().strip('\"')
+        return translation
+    except Exception as e:
+        logger.error("Error translating text: %s", e)
+        return text
+
 @shared_task
 def generate_video_task(video_id, image_url, unique_filename, text_prompt):
     try:
+        # 텍스트가 한국어인지 확인 후 번역
+        if is_korean(text_prompt):
+            translated_prompt = translate_text(text_prompt)
+        else:
+            translated_prompt = text_prompt
+
         video = Video.objects.get(id=video_id)
-        api_key = settings.VIDEO_API_KEY
+        api_key = env("VIDEO_API_KEY")
         url = "https://api.aivideoapi.com/runway/generate/imageDescription"
 
         payload = {
-            "text_prompt": text_prompt,
+            "text_prompt": translated_prompt,
             "img_prompt": image_url,
             "motion": 5,
             "seed": 0,
@@ -86,14 +129,14 @@ def generate_video_task(video_id, image_url, unique_filename, text_prompt):
 
 def upload_to_s3(file_content, file_name, content_type):
     s3 = boto3.client('s3',
-                      aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                      aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                      region_name=settings.AWS_S3_REGION_NAME)
+                      aws_access_key_id=env("AWS_ACCESS_KEY_ID"),
+                      aws_secret_access_key=env("AWS_SECRET_ACCESS_KEY"),
+                      region_name=env("AWS_S3_REGION_NAME"))
 
     try:
-        s3.upload_fileobj(io.BytesIO(file_content), settings.AWS_STORAGE_BUCKET_NAME_VIDEO, file_name,
+        s3.upload_fileobj(io.BytesIO(file_content), env("AWS_STORAGE_BUCKET_NAME_VIDEO"), file_name,
                           ExtraArgs={'ContentType': content_type})
-        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME_VIDEO}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_name}"
+        s3_url = f"https://{env('AWS_STORAGE_BUCKET_NAME_VIDEO')}.s3.{env('AWS_S3_REGION_NAME')}.amazonaws.com/{file_name}"
         return s3_url
     except NoCredentialsError:
         logger.error("Credentials not available")
