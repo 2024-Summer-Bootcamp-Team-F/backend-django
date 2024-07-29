@@ -10,12 +10,12 @@ class Banner(models.Model):
     item_concept = models.CharField(max_length=15)
     item_category = models.CharField(max_length=10)
 
-    maintext = models.CharField(max_length=150)  # 메인 광고글 길이 늘림
-    servetext = models.CharField(max_length=100, default='Default serve text')  # 기본 값 추가
-    maintext2 = models.CharField(max_length=150, blank=True, null=True)  # 새롭게 추가한 maintext2
-    servetext2 = models.CharField(max_length=100, blank=True, null=True) # 새롭게 추가한 servetext2
+    maintext = models.CharField(max_length=150)
+    servetext = models.CharField(max_length=100, default='Default serve text')
+    maintext2 = models.CharField(max_length=150, blank=True, null=True)
+    servetext2 = models.CharField(max_length=100, blank=True, null=True)
 
-    add_information = models.TextField(null=True, blank=True)  # 추가 정보 필드
+    add_information = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_deleted = models.BooleanField(default=False)

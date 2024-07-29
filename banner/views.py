@@ -5,8 +5,7 @@ from drf_yasg import openapi
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.contrib.auth.models import User
-from .models import Banner, UserInteraction, Image
+from .models import Banner, UserInteraction
 from .serializers import BannerSerializer, BannerDetailSerializer, BannerUpdateSerializer
 import environ
 from asgiref.sync import async_to_sync

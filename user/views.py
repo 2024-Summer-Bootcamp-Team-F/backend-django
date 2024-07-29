@@ -2,11 +2,10 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
 from user.models import User
 from user.serializers import NicknameCreateSerializer
+import logging
 
-import logging # 로그 검사
 logger = logging.getLogger(__name__)
 
 @swagger_auto_schema(
