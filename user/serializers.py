@@ -1,8 +1,7 @@
 from rest_framework import serializers
-
 from user.models import User
-
 import logging
+
 logger = logging.getLogger(__name__)
 
 class UserSerializer(serializers.ModelSerializer):
