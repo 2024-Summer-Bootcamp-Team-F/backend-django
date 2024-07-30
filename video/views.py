@@ -10,21 +10,23 @@ from .tasks import generate_video_task
 import uuid
 from image.models import Image
 
-@swagger_auto_schema(method='post',
-                     request_body=openapi.Schema(
-                         type=openapi.TYPE_OBJECT,
-                         properties={
-                             'user_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the user'),
-                             'image_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the image'),
-                             'text_prompt': openapi.Schema(type=openapi.TYPE_STRING, description='Text prompt for video generation'),
-                         }
-                     ),
-                     responses={201: openapi.Response('Created', openapi.Schema(
-                         type=openapi.TYPE_OBJECT,
-                         properties={
-                             'video_id': openapi.Schema(type=openapi.TYPE_INTEGER)
-                         }
-                     ))})
+@swagger_auto_schema(
+    method='post',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'user_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the user'),
+            'image_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the image'),
+            'text_prompt': openapi.Schema(type=openapi.TYPE_STRING, description='Text prompt for video generation'),
+        }
+    ),
+    responses={201: openapi.Response('Created', openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'video_id': openapi.Schema(type=openapi.TYPE_INTEGER)
+        }
+    ))}
+)
 @api_view(['POST'])
 def videos_create(request):
     user_id = request.data.get('user_id')
@@ -36,8 +38,8 @@ def videos_create(request):
 
     try:
         image = Image.objects.get(id=image_id)
-    except Background.DoesNotExist:
-        return Response({"error": "Background not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Image.DoesNotExist:
+        return Response({"error": "Image not found"}, status=status.HTTP_404_NOT_FOUND)
 
     video = Video.objects.create(user_id=user_id, image=image)
     unique_filename = f"{uuid.uuid4()}.mp4"
@@ -45,11 +47,25 @@ def videos_create(request):
 
     return Response({'video_id': video.id}, status=status.HTTP_201_CREATED)
 
+
+@swagger_auto_schema(
+    method='get',
+    manual_parameters=[
+        openapi.Parameter(
+            'videoId',
+            openapi.IN_PATH,
+            description="ID of the video",
+            type=openapi.TYPE_INTEGER  # TYPE_STRING에서 TYPE_INTEGER로 변경
+        )
+    ],
+    responses={200: VideoSerializer(many=False)},
+)
 @api_view(['GET', 'PUT', 'DELETE'])
 def video_manage(request, videoId):
     try:
-        video = Video.objects.get(id=videoId)
-    except Video.DoesNotExist:
+        video_id = int(videoId)  # 문자열 ID를 정수로 변환
+        video = Video.objects.get(id=video_id)
+    except (ValueError, Video.DoesNotExist):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
