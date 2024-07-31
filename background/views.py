@@ -1,3 +1,4 @@
+# background/views.py
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -15,14 +16,50 @@ import json
 import logging
 from django.conf import settings
 from .tasks import generate_background_task
+import re
+import environ
+
+# 환경 변수 로드
+env = environ.Env()
+environ.Env.read_env()
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
+# OpenAI API 키 설정
+openai_api_key = env("OPENAI_API_KEY")
+
 # 허용된 이미지 생성 유형
 GEN_TYPES = ['remove_bg', 'color_bg', 'simple', 'concept']
 
-# Swagger를 사용하여 API 문서화
+def is_korean(text):
+    # 간단하게 한국어 문자가 포함되어 있는지 확인
+    return bool(re.search('[\u3131-\u3163\uac00-\ud7a3]', text))
+
+def translate_text(text, source_language='ko', target_language='en'):
+    try:
+        headers = {
+            'Authorization': f'Bearer {openai_api_key}',
+            'Content-Type': 'application/json'
+        }
+        data = {
+            "model": "gpt-4",
+            "messages": [
+                {"role": "system", "content": f"Translate the following text from {source_language} to {target_language}."},
+                {"role": "user", "content": text}
+            ],
+            "max_tokens": 100
+        }
+
+        response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
+        response.raise_for_status()
+        response_json = response.json()
+        translation = response_json['choices'][0]['message']['content'].strip().strip('\"')
+        return translation
+    except Exception as e:
+        logger.error("Error translating text: %s", e)
+        return text
+
 @swagger_auto_schema(method='post',
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
@@ -71,6 +108,16 @@ def backgrounds_view(request):
         image = Image.objects.get(id=image_id)
     except Image.DoesNotExist:
         return Response({"error": "이미지 없음"}, status=status.HTTP_404_NOT_FOUND)
+
+    # 사용자의 입력을 영어로 번역
+    category = concept_option.get('category')
+    theme = concept_option.get('theme')
+    if category and is_korean(category):
+        category_en = translate_text(category)
+        concept_option['category'] = category_en
+    if theme and is_korean(theme):
+        theme_en = translate_text(theme)
+        concept_option['theme'] = theme_en
 
     unique_filename = f"{uuid.uuid4()}.png"
     background_instance = Background.objects.create(

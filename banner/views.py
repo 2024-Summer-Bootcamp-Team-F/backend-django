@@ -27,7 +27,7 @@ async def generate_ad_text(item_name, item_concept, item_category, add_informati
         'Content-Type': 'application/json'
     }
     data = {
-        "model": "gpt-4o",
+        "model": "gpt-4",
         "messages": [
             {"role": "system",
              "content": "당신은 창의적인 카피라이터입니다. 각 요청에 대해 일관된 광고 문구를 한 문장으로 생성하세요. 광고 문구는 최대 20자 이내의 완전한 문장으로 작성하세요. 글자 수 제한에 따라 완전한 문장이 되지 않는다면 다시 생성해주세요."},
