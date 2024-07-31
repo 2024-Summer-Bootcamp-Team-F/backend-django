@@ -31,7 +31,7 @@ def translate_text(text, source_language='ko', target_language='en'):
             'Content-Type': 'application/json'
         }
         data = {
-            "model": "gpt-3.5-turbo",
+            "model": "gpt-4",
             "messages": [
                 {"role": "system", "content": f"Translate the following text from {source_language} to {target_language}."},
                 {"role": "user", "content": text}

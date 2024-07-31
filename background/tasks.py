@@ -1,3 +1,4 @@
+# background/tasks.py
 from celery import shared_task
 from .models import Background, Image, User
 import requests
@@ -9,14 +10,11 @@ import json
 from django.conf import settings
 import logging
 import redis
-from .serializers import BackgroundSerializer
-
 
 logger = logging.getLogger(__name__)
 
 # Redis 클라이언트 설정
 redis_client = redis.StrictRedis(host='redis', port=6379, db=0)
-
 
 @shared_task
 def generate_background_task(background_id, user_id, image_id, gen_type, output_w, output_h, concept_option,
@@ -64,7 +62,7 @@ def generate_background_task(background_id, user_id, image_id, gen_type, output_
 
         redis_client.delete(f'background_image_url_{image_id}')
 
-        return BackgroundSerializer(background_instance).data
+        return {"background_id": background_instance.id, "image_url": s3_url}
     except Exception as e:
         logger.error("Error in generate_background_task: %s", e)
         return {"error": str(e)}
